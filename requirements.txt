@@ -1,0 +1,25 @@
+# Dependencies for PPE Detection Monolith
+
+# Deep Learning & Computer Vision
+ultralytics>=8.1.0
+torch>=2.0.0
+torchvision>=0.15.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+Pillow>=10.0.0
+
+# Tracking
+supervision>=0.18.0
+
+# Dashboard & Web
+streamlit>=1.30.0
+
+# Configuration & Utilities
+pydantic>=2.5.0
+pyyaml>=6.0.1
+loguru>=0.7.2
+tqdm>=4.66.0
+
+# Testing & Linting
+pytest>=7.4.0
+black>=23.11.0
