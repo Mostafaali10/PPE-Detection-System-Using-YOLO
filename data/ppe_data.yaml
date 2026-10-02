@@ -1,0 +1,9 @@
+path: C:/Users/aa683/Desktop/ppe_detection/data/processed
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: Hardhat
+  1: Person
+  2: Safety Vest
