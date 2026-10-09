@@ -12,37 +12,52 @@ class PPEDetector:
     never directly to YOLO.
     """
 
-    def __init__(self, model_path: str, conf_threshold: float = 0.4, device: str = "cpu"):
+    def __init__(
+        self,
+        model_path: str = None,
+        conf_threshold: float = 0.4,
+        device: str = None
+    ):
         """
-        This function runs only ONE time when we create the detector.
+        Initializes the YOLO detector.
 
         Parameters:
-            model_path     → path to the trained model (best.pt)
+            model_path     → path to the trained model (best.pt), defaults to models/best.pt
             conf_threshold → minimum confidence score to keep a detection
-            device         → "cpu" or "0" (for GPU)
+            device         → "0" for GPU, "cpu" for CPU, or None for auto-detection
         """
-        # Save the settings
-        self.model_path = Path(model_path)
-        self.conf_threshold = conf_threshold
-        self.device = device
+        if model_path is None:
+            self.model_path = Path(__file__).resolve().parents[2] / "models" / "best.pt"
+        else:
+            self.model_path = Path(model_path)
 
+        self.conf_threshold = conf_threshold
+
+        # Handle device resolution
+        import torch
+        if device is None:
+            self.device = "0" if torch.cuda.is_available() else "cpu"
+        elif device == "0" and not torch.cuda.is_available():
+            print("[PPEDetector] CUDA GPU requested but unavailable. Falling back to CPU.")
+            self.device = "cpu"
+        else:
+            self.device = device
 
         # Check if the model file really exists
         if not self.model_path.exists():
             raise FileNotFoundError(f"Model file not found: {self.model_path}")
 
-        # Load the YOLO model (this is slow, so we do it only once)
-        print("Loading YOLO model... please wait")
+        # Load the YOLO model
+        print(f"Loading YOLO model from {self.model_path}...")
         self.model = YOLO(str(self.model_path))
 
-        
         if self.device == "0":
             self.device = "cuda:0"
-            
+
         # Put the model on GPU or CPU
         self.model.to(self.device)
 
-        print(f"Model loaded successfully!")
+        print("Model loaded successfully!")
         print(f"Using device: {self.device}")
         print(f"Confidence threshold: {self.conf_threshold}")
 

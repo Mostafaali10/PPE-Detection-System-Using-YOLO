@@ -1,23 +1,27 @@
-from ultralytics import YOLO
 from pathlib import Path
+from ultralytics import YOLO
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
 
 def main():
-    # مسار أفضل نموذج تم تدريبه
-    model_path = Path(r"C:\Users\aa683\Desktop\ppe_detection\models\runs\ppe_yolov8s-5\weights\best.pt")
-    
+    model_path = PROJECT_ROOT / "models" / "best.pt"
+    if not model_path.exists():
+        # Fallback to runs directory if best.pt is not in models/
+        model_path = PROJECT_ROOT / "models" / "runs" / "ppe_yolov8s-5" / "weights" / "best.pt"
+
     if not model_path.exists():
         print(f"Model weight not found at {model_path}. Please train first.")
         return
 
     model = YOLO(str(model_path))
 
-    # التقييم على Test Set (أو Validation Set)
     metrics = model.val(
-        data=r"C:\Users\aa683\Desktop\ppe_detection\data\ppe_data.yaml",
-        split="test",       # تقييم على test set
+        data=str(PROJECT_ROOT / "data" / "ppe_data.yaml"),
+        split="test",
         imgsz=640,
         batch=8,
-        project=r"C:\Users\aa683\Desktop\ppe_detection\models\runs",
+        project=str(PROJECT_ROOT / "models" / "runs"),
         name="eval_test"
     )
 

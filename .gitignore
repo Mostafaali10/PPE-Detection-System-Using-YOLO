@@ -2,8 +2,6 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
 
 # Distribution / packaging
@@ -28,28 +26,56 @@ wheels/
 venv/
 env/
 ENV/
+.venv/
+env.bak/
+venv.bak/
 .env
 
-# PyCharm / VS Code
+# Pytest & IDEs
+.pytest_cache/
+.coverage
+htmlcov/
 .idea/
 .vscode/
+*.swp
+*.swo
 
 # Jupyter Notebook
 .ipynb_checkpoints
+notebooks/.ipynb_checkpoints/
 
-# Model weights & large data files
-models/*.pt
-models/*.onnx
-models/*.engine
+# Model weights & Training runs
+models/*
 !models/.gitkeep
-data/raw/*
+!models/best.pt
+models/runs/
+training/runs/
+training/*.pt
+training/weights/
+*.cache
+
+# Datasets & Large Data files
+data/raw/
 !data/raw/.gitkeep
-data/processed/*
+data/processed/train/
+data/processed/valid/
+data/processed/test/
 !data/processed/.gitkeep
+!data/processed/README*.txt
+
+# Pipeline Outputs & Snapshots
 data/outputs/*
 !data/outputs/.gitkeep
+data/outputs/violations/*
+!data/outputs/violations/.gitkeep
+test_frame_processor_output.jpg
 
-# Runs & logs
+# Logs
 runs/
-logs/
+logs/*
+!logs/.gitkeep
 *.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

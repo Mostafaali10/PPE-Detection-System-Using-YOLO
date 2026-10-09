@@ -1,79 +1,53 @@
-# tests/test_tracker.py
-
-import cv2
+# tests/test_detections/test_tracker.py
+import numpy as np
 import supervision as sv
-from src.detection.detector import PPEDetector
+
 from src.detection.tracker import WorkerTracker
 
-# 1. Create Detector and Tracker
-detector = PPEDetector(
-    model_path=r"C:\Users\aa683\Desktop\ppe_detection\models\best.pt",
-    conf_threshold=0.4,
-    device="0"
-)
 
-tracker = WorkerTracker()
+def make_person_dets(boxes):
+    n = len(boxes)
+    return sv.Detections(
+        xyxy=np.array(boxes, dtype=float),
+        class_id=np.array([1] * n),
+        confidence=np.array([0.9] * n),
+    )
 
-# 2. Open video
-video_path = r"C:\Users\aa683\Desktop\ppe_detection\data\test_video.mp4"
-cap = cv2.VideoCapture(video_path)
 
-# Use webcam if no video:
-# cap = cv2.VideoCapture(0)
+def test_tracker_empty_input():
+    tracker = WorkerTracker()
+    out = tracker.update(sv.Detections.empty())
+    assert len(out) == 0
 
-if not cap.isOpened():
-    print("Cannot open video. Check the path.")
-    exit()
 
-# Annotators (for drawing)
-box_annotator = sv.BoxAnnotator(thickness=2)
-label_annotator = sv.LabelAnnotator(text_scale=0.5)
+def test_tracker_single_worker_stable_id():
+    tracker = WorkerTracker()
 
-frame_count = 0
-print("\n===== Starting Tracker Test =====")
-print("Press 'q' to quit\n")
+    frames = [
+        [[100, 80, 200, 300]],
+        [[102, 82, 202, 302]],
+        [[104, 84, 204, 304]],
+    ]
 
-while True:
-    ret, frame = cap.read()
-    if not ret:
-        break
+    ids = []
+    for boxes in frames:
+        tracked = tracker.update(make_person_dets(boxes))
+        assert len(tracked) == 1
+        assert tracked.tracker_id is not None
+        ids.append(int(tracked.tracker_id[0]))
 
-    frame_count += 1
+    assert ids[0] == ids[1] == ids[2]
 
-    # Detect
-    all_detections = detector.detect(frame)
 
-    # Keep only Person (class_id = 1)
-    if len(all_detections) > 0:
-        person_mask = all_detections.class_id == 1
-        person_detections = all_detections[person_mask]
-    else:
-        person_detections = all_detections
+def test_tracker_two_workers_distinct_ids():
+    tracker = WorkerTracker()
 
-    # Track
-    tracked = tracker.update(person_detections)
+    dets = make_person_dets([
+        [50, 50, 120, 220],
+        [300, 60, 380, 240],
+    ])
+    tracked = tracker.update(dets)
 
-    # Create labels with Tracker ID
-    labels = []
-    if tracked.tracker_id is not None:
-        for tracker_id in tracked.tracker_id:
-            labels.append(f"Worker #{tracker_id}")
-
-    # Draw boxes + labels
-    annotated_frame = box_annotator.annotate(frame.copy(), tracked)
-    annotated_frame = label_annotator.annotate(annotated_frame, tracked, labels)
-
-    # Show the frame
-    cv2.imshow("Tracker Test", annotated_frame)
-
-    # Print every 15 frames
-    if frame_count % 15 == 0:
-        print(f"Frame {frame_count:3d} → Tracker IDs: {tracked.tracker_id}")
-
-    # Press 'q' to quit
-    if cv2.waitKey(30) & 0xFF == ord('q'):
-        break
-
-cap.release()
-cv2.destroyAllWindows()
-print("\n===== Tracker Test Finished =====")
+    assert len(tracked) == 2
+    assert tracked.tracker_id is not None
+    assert len(set(int(x) for x in tracked.tracker_id)) == 2

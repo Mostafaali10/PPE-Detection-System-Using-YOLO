@@ -1,6 +1,7 @@
 from pathlib import Path
 
-DATASET_PATH = Path(r"C:\Users\aa683\Desktop\ppe_detection\data\processed")
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DATASET_PATH = PROJECT_ROOT / "data" / "processed"
 
 # Mapping: القديم class_id → new class_id
 # فقط الكلاسات اللي عايزينها

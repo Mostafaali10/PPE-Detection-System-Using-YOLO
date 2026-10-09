@@ -1,42 +1,47 @@
-# test_detector.py
-
-import cv2
+# tests/test_detections/test_detector.py
 import numpy as np
-import time
+import pytest
+from pathlib import Path
+import cv2
+
 from src.detection.detector import PPEDetector
 
-# 1. Create the Detector (only once)
-detector = PPEDetector(
-    model_path=r"C:\Users\aa683\Desktop\ppe_detection\models\best.pt",
-    conf_threshold=0.4,
-    device="0"          # change to "cpu" if you want
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MODEL_PATH = PROJECT_ROOT / "models" / "best.pt"
+TEST_IMAGE = PROJECT_ROOT / "data" / "processed" / "test" / "images" / "youtube-108_jpg.rf.9dc7ed5f816f07d520f3dbfaad08d40f.jpg"
 
-print("\n===== Test 1: Real Image =====")
-# Put the path of any image that contains workers
-image_path = r"C:\Users\aa683\Desktop\ppe_detection\data\processed\test\images\youtube-108_jpg.rf.9dc7ed5f816f07d520f3dbfaad08d40f.jpg"
-frame = cv2.imread(image_path)
 
-if frame is None:
-    print("Image not found, please change the path")
-else:
-    detections = detector.detect(frame)
-    print(f"Number of detections: {len(detections)}")
-    print(f"Class IDs: {detections.class_id}")
-    print(f"Confidences: {detections.confidence}")
+@pytest.fixture(scope="module")
+def detector():
+    if not MODEL_PATH.exists():
+        pytest.skip("Model weights not found")
+    return PPEDetector(
+        model_path=str(MODEL_PATH),
+        conf_threshold=0.4,
+        device=None
+    )
 
-print("\n===== Test 2: Black (Empty) Image =====")
-black_frame = np.zeros((640, 640, 3), dtype=np.uint8)
-detections_black = detector.detect(black_frame)
-print(f"Number of detections: {len(detections_black)}")   # should be 0
 
-print("\n===== Test 3: Speed Measurement =====")
-if frame is not None:
-    times = []
-    for i in range(20):
-        start = time.time()
-        _ = detector.detect(frame)
-        times.append(time.time() - start)
+def test_detector_handles_empty_frame(detector):
+    frame = np.zeros((640, 640, 3), dtype=np.uint8)
+    dets = detector.detect(frame)
+    assert len(dets) == 0
 
-    avg_ms = (sum(times) / len(times)) * 1000
-    print(f"Average time per frame: {avg_ms:.1f} ms")
+
+def test_detector_none_frame_returns_empty(detector):
+    dets = detector.detect(None)
+    assert len(dets) == 0
+
+
+def test_detector_valid_image_returns_detections(detector):
+    if not Path(TEST_IMAGE).exists():
+        pytest.skip("Test image not found")
+
+    frame = cv2.imread(TEST_IMAGE)
+    assert frame is not None
+
+    dets = detector.detect(frame)
+    assert len(dets) >= 1
+    assert dets.xyxy is not None
+    assert dets.class_id is not None
+    assert dets.confidence is not None
